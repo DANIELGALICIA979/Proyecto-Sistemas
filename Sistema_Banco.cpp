@@ -1,8 +1,21 @@
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace std;
 int opcion;
+
+struct Usuario
+{
+    string NomUsuario;
+    string ContraseñaUsuario;
+};
+
+vector <Usuario> usuario;
+
+void CreacionCuenta(){
+    cout <<"INGRESE SU NOMBRE";
+}
 
 void Menu(){
     while (true) {
@@ -15,7 +28,9 @@ void Menu(){
                 break;
             
             case 2:
-                
+                cout << "RETIRAR DINERO";
+                break;
+
             default: cout << "SELECCIONE UNA OPCION VALIDA!!";
                 break;
             }
@@ -29,16 +44,16 @@ int main() {
 
     cout <<"SELECCIONE SU TIPO DE USUARIO:\n";
     cout <<"SI YA TIENE CUENTA INGRESE '1'\n";
-    cout <<"SI QUIERE CREAR UNA CUENTA INGRESE '2'\n";
+    cout <<"SI QUIERE CREAR UNA CUENTA NUEVA INGRESE '2'\n";
     cin >> opcUsuario;
 
     
-    if (opcUsuario == 2)
+    if (opcUsuario == 1)
     {
-        cout <<"INGRESE LOS DATOS PAA CREAR LA CUENTA";
+        cout <<"VERIFICACION DE LA CUENTA";
     }
     else{
-        cout <<"INGRESE SU NOMBRE DE USUARIO";
+        cout <<"REGISTRO DE USUARIO NUEVO";
         Menu();
     }
 
