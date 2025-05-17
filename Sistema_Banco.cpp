@@ -9,9 +9,14 @@ struct Usuario
 {
     string NomUsuario;
     string ContraUsuario;
+    string Dinero;
 };
 
 vector <Usuario> usuario;
+
+// Usuario user1;
+// user1.NomUsuario = "Daniel";
+
 
 void CreacionCuenta(){
     Usuario NuevoUSUARIO;
@@ -26,6 +31,7 @@ void VusualizarUser(){
     string Nombre;
     cout <<"\nINGRESE EL NOMBRE A BUSCAR";
     cin >> Nombre;
+
 
     for(Usuario&user : usuario)
         if (user.NomUsuario == Nombre)
@@ -63,6 +69,13 @@ void Menu(){
 
 int main() {
     int opcUsuario;
+
+    // Example of initializing a user (if needed)
+    Usuario user1;
+    user1.NomUsuario = "Daniel";
+    user1.ContraUsuario = "1234";
+    user1.Dinero = "0";
+    usuario.push_back(user1);
 
     cout << "BIENVENIDO\n";
 
