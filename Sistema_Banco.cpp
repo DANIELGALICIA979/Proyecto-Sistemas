@@ -4,11 +4,12 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
 mutex mtx; //Sincronizacion de hilos dice el dipsik
 int opcion;
-
 
 struct Usuario
 {
@@ -18,6 +19,35 @@ struct Usuario
 };
 
 vector <Usuario> usuarios;
+
+//funciones prototipo xd
+void procesarTransaccion(double cantidad, string tipoPlazo);
+void ingresarDinero();
+void CreacionCuenta();
+void VisualizarUser();
+void Menu();
+void accesoVentanilla();
+void accesoAsesor();
+void acceso();
+void autenticacion();
+
+
+int main() {
+    
+    Usuario user1;
+    user1.NomUsuario = "Daniel";
+    user1.ContraUsuario = "1234";
+    user1.Dinero = 0.00;
+    usuarios.push_back(user1);
+
+    acceso();
+
+    
+    
+
+    return 0;
+}
+
 
 //Simular proceso de transacciones
 void procesarTransaccion(double cantidad, string tipoPlazo)
@@ -47,7 +77,7 @@ void ingresarDinero()
     double cantidad;
     int plazo;
 
-    cout << "INGRESE SU NOMBRE: ";
+    cout << "INGRESE SU NOMBRE DE USUARIO: ";
     
     cin>> nombre;
     
@@ -99,22 +129,21 @@ void ingresarDinero()
 
         }
     }
-
     cout << "Usuario no encontrado!" << endl;
 }
 
 void CreacionCuenta(){
     Usuario NuevoUSUARIO;
-    cout <<"INGRESE SU NOMBRE"<<endl;
+    cout <<"INGRESE SU NOMBRE: "<<endl;
     cin >> NuevoUSUARIO.NomUsuario;
-    cout <<"INGRESE SU CONTRASEÑA"<<endl;
+    cout <<"INGRESE SU CONTRASEÑA: "<<endl;
     cin >> NuevoUSUARIO.ContraUsuario;
     usuarios.push_back(NuevoUSUARIO);
 }
 
-void VusualizarUser(){
+void VisualizarUser(){
     string Nombre;
-    cout <<"INGRESE EL NOMBRE A BUSCAR: ";
+    cout <<"INGRESE SU NOMBRE DE USUARIO: ";
     cin >> Nombre;
 
     for(Usuario&user : usuarios)
@@ -126,7 +155,6 @@ void VusualizarUser(){
     {
         cout <<"NOMBRE NO EXISTENTE"<<endl;
     }
-
 }
 
 void Menu(){
@@ -173,35 +201,101 @@ void Menu(){
     }
 }
 
-int main() {
+void accesoVentanilla()
+{
+    system("clear");
+    srand(time(0));
+    int ventanilla = rand() % 5 + 1; //Numero aleatorio entre 1 y 5
+    system("clear");
+    cout << "Favor de pasar a ventanilla numero: " << ventanilla << endl;
+}
+
+void accesoAsesor()
+{
+    system("clear");
+    srand(time(0));
+    vector<string> asesores = {"Juan Perez", "Maria Garcia", "Carlos Lopez"};
+    int numAsesor = rand() % 3 + 1; //Numero aleatorio entre 1 y 3
+    switch (numAsesor)
+    {
+    case 1:
+        system("clear");
+        cout << "Pase con el asesor" << asesores[numAsesor-1] << endl;
+        break;
+    case 2:
+        system("clear");
+        cout << "Pase con la asesora: " << asesores[numAsesor-1] << endl;
+        break;
+    
+    case 3:
+        system("clear");
+        cout << "Pase con el asesor: " << asesores[numAsesor-1] << endl;
+        break;
+        
+    default:    
+        cout << "Pase con el asesor: " << asesores[0] << endl;
+        break;
+    }
+}
+
+void acceso(){
+    int opcInicial;
+    cout << "====================================" << endl;
+    cout << "   SISTEMA BANCARIO - BIENVENIDO    " << endl;
+    cout << "====================================" << endl;
+    cout << "1. Asignacion de ventanilla" << endl;
+    cout << "2. Asignacion de asesor" << endl;
+    cout << "3. Acceder al sistema" << endl;
+    cout << "Seleccione una opcion: ";
+    cin >> opcInicial;
+
+    switch (opcInicial)
+    {
+    case 1:
+        accesoVentanilla();
+        break;
+
+    case 2:
+        accesoAsesor();
+        break;
+    
+    case 3:
+        autenticacion();
+        Menu();
+        break;
+    
+    default:
+        cout << "Opcion no valida. Intente nuevamente." << endl;
+        acceso();
+        break;
+    }
+}
+
+void autenticacion()
+{
     int opcUsuario;
-
-    Usuario user1;
-    user1.NomUsuario = "Daniel";
-    user1.ContraUsuario = "1234";
-    user1.Dinero = 0.00;
-    usuarios.push_back(user1);
-
-    cout << "BIENVENIDO"<<endl;
-
-    cout <<"SELECCIONE SU TIPO DE USUARIO:"<<endl;
-    cout <<"SI YA TIENE CUENTA INGRESE '1'"<<endl;
-    cout <<"SI QUIERE CREAR UNA CUENTA NUEVA INGRESE '2'"<<endl;
+    system("clear");
+    cout << "SELECCIONE SU TIPO DE USUARIO: " << endl;
+    cout << "1. Acceso con cuenta existente." << endl;
+    cout << "2. Registro de nuevo cliente." << endl;
+    cout << "Opcion: ";
     cin >> opcUsuario;
 
-    if (opcUsuario == 1)
+    switch (opcUsuario)
     {
-        cout <<"VERIFICACION DE LA CUENTA"<<endl;
-        VusualizarUser();
-        Menu();
-    }
-    else if (opcUsuario == 2)
-    {
-        cout <<"REGISTRO DE USUARIO NUEVO"<<endl;
-        CreacionCuenta();
-        Menu();
-    }
+    case 1:
+        VisualizarUser();
+        break;
     
-
-    return 0;
+    case 2:
+        CreacionCuenta();
+        break;
+    default:
+        cout << "Porfavor digite una opcion valida!"<< endl;
+        cout << endl;
+        autenticacion();
+        break;
+    }
 }
+
+
