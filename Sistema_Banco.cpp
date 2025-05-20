@@ -7,6 +7,12 @@
 #include <cstdlib>
 #include <ctime>
 
+
+//FOKIUUU
+///
+
+//
+
 using namespace std;
 mutex mtx; //Sincronizacion de hilos dice el dipsik
 int opcion;
