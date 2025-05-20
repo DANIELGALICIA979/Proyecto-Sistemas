@@ -11,7 +11,7 @@
 //FOKIUUU
 ///
 
-//
+//NO SIRV
 
 using namespace std;
 mutex mtx; //Sincronizacion de hilos dice el dipsik
