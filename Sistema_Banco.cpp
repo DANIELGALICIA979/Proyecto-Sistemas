@@ -8,11 +8,6 @@
 #include <ctime>
 
 
-//FOKIUUU
-///
-
-//NO SIRV
-
 using namespace std;
 mutex mtx; //Sincronizacion de hilos dice el dipsik
 int opcion;
@@ -31,6 +26,7 @@ void procesarTransaccion(double cantidad, string tipoPlazo);
 void ingresarDinero();
 void CreacionCuenta();
 void VisualizarUser();
+void ConsultarDinero(Usuario &usuario);
 void Menu();
 void accesoVentanilla();
 void accesoAsesor();
@@ -83,7 +79,7 @@ void ingresarDinero()
     double cantidad;
     int plazo;
 
-    cout << "INGRESE SU NOMBRE DE USUARIO: ";
+    cout << "INGRESE SU NOMBRE DE USUARIO : ";
     
     cin>> nombre;
     
@@ -149,26 +145,34 @@ void CreacionCuenta(){
 
 void VisualizarUser(){
     string Nombre;
-    cout <<"INGRESE SU NOMBRE DE USUARIO: ";
+    string Contrasena;
+    cout <<"INGRESE SU NOMBRE DE USUARIO: "<< endl;
     cin >> Nombre;
+    cout <<"INGRESE SU CONTRASEÑA"<<endl;
+    cin >> Contrasena;
 
     for(Usuario&user : usuarios)
-    if (user.NomUsuario == Nombre)
-    {
-        cout <<"Bienvenido: "<<Nombre<<endl;
-    }
-    else
-    {
-        cout <<"NOMBRE NO EXISTENTE"<<endl;
-    }
+        if (user.NomUsuario == Nombre )
+        {
+            if (user.ContraUsuario == Contrasena) 
+            {
+                cout <<"Bienvenido: "<<Nombre<<endl;
+                return;
+            }
+        }
+        else
+        {
+            cout <<"NOMBRE NO EXISTENTE"<<endl;
+        }
 }
 
 void Menu(){
     while (true) {
-        cout << "MENU DE ACCIONES: " << endl;;
+        cout << "\n MENU DE ACCIONES: " << endl;;
         cout << "1. INGRESAR DINERO." << endl;
+        cout << "2. CONSULTAR SALDO."<< endl;
         cout << "2. RETIRAR DINERO."<< endl;
-        cout << "3. DEPSOTIAR A UNA CUENTA."<< endl;
+        cout << "3. DEPOSITAR A UNA CUENTA."<< endl;
         cout << "4. AGREGAR CONTACTOS."<< endl;
         cout << "5. DAR DE BAJA LA CUENTA."<< endl;
         cout << "6. SALIR."<< endl;
@@ -180,24 +184,38 @@ void Menu(){
         case 1:
             ingresarDinero();
             break;
-            
+
         case 2:
+            {
+            string nombreIngresado;
+            cout << "INGRESE EL NOMBRE DE USUARIO A VERIFICAR";
+            cin >> nombreIngresado;
+            for (auto &user : usuarios) {
+                if (user.NomUsuario == nombreIngresado) {
+                    ConsultarDinero(user); 
+                    break;
+                }
+            }
+            }
+            
+            
+        case 3:
             cout << "RETIRAR DINERO"<<endl;
             break;
 
-        case 3:
+        case 4:
             cout << "DEPOSITAR A UNA CUENTA" <<endl;
             break;
         
-        case 4:
+        case 5:
             cout << "AGREGAR CONTACTOS" <<endl;
             break;
 
-        case 5:
+        case 6:
             cout << "DAR DE BAJA LA CUENTA" <<endl;
             break;
 
-        case 6:
+        case 7:
             cout << "SALIR" <<endl;
             return;
             
@@ -303,5 +321,12 @@ void autenticacion()
         break;
     }
 }
+
+void ConsultarDinero(Usuario &usuario){
+        double Money;
+        cout << "REVISANDO SALDO DISPONIBLE" <<endl;
+        cout << "SU SALDO ACTUAL ES: " << usuario.Dinero <<endl;
+    }
+
 
 
