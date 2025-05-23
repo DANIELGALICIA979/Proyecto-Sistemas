@@ -6,6 +6,7 @@
 #include <mutex>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 
 using namespace std;
 
@@ -26,6 +27,7 @@ vector <Usuario> usuarios;
 //funciones prototipo xd
 void procesarTransaccion(double cantidad, string tipoPlazo);
 void ingresarDinero(Usuario& usuarioActual);
+void RetirarDinero(Usuario& usuarioActual);
 void agregarContactos(Usuario& usuarioActual);
 Usuario* VisualizarUser();
 Usuario* CreacionCuenta();
@@ -37,6 +39,7 @@ Usuario* acceso();
 Usuario* autenticacion();
 void depositarDinero(Usuario &usuarioActual);
 void TarjetaT();
+void EliminarCUENTA(Usuario& usuarioActual);
 
 
 int main() {
@@ -198,7 +201,7 @@ void Menu(Usuario& usuarioActual) {
             ConsultarDinero(usuarioActual);
             break;
         case 3:
-            
+            RetirarDinero(usuarioActual);
             break;
         case 4:
             depositarDinero(usuarioActual);
@@ -207,7 +210,8 @@ void Menu(Usuario& usuarioActual) {
             agregarContactos(usuarioActual);
             break;
         case 6:
-            
+            EliminarCUENTA(usuarioActual);
+            main();
             break;
         case 7:
             return;
@@ -415,6 +419,52 @@ void depositarDinero(Usuario &usuarioActual)
     else
     {
         cout << "El usuario " << nombreContacto << " no es tu contacto o no existe en el sistema." << endl;
+    }
+}
+
+void RetirarDinero(Usuario& usuarioActual) {
+    double DineroRET;
+    cout << "INGRESE LA CANTIDAD QUE DESEA RETIRAR: ";
+    cin >> DineroRET;
+
+    if (DineroRET <= 0) {
+        cout << "CANTIDAD NO VALIDA. INGRESE UN MONTO POSITIVO." << endl;
+    } 
+    else if (DineroRET <= usuarioActual.Dinero) {
+        usuarioActual.Dinero -= DineroRET;
+        cout << "RETIRO EXITOSO" << endl;
+    } 
+    else {
+        cout << "FONDOS INSUFICIENTES" << endl;
+    }
+}
+
+void EliminarCUENTA(Usuario& usuarioActual) {
+    int opcion;
+    cout << "¿DESEA ELIMINAR SU CUENTA?" << endl;
+    cout << "| 'SI' inserte 1 || 'NO' inserte 2 |" << endl;
+    cin >> opcion;
+
+    if (opcion == 1) {
+        // Buscar por nombre de usuario
+        auto it = find_if(usuarios.begin(), usuarios.end(),
+                          [&usuarioActual](const Usuario& u) {
+                              return u.NomUsuario == usuarioActual.NomUsuario;
+                          });
+
+        if (it != usuarios.end()) {
+            usuarios.erase(it);
+            cout << "CUENTA ELIMINADA EXITOSAMENTE." << endl;
+
+            // Opcional: limpiar datos del usuario actual
+            usuarioActual = Usuario(); 
+        } else {
+            cout << "USUARIO NO ENCONTRADO." << endl;
+        }
+    } else if (opcion == 2) {
+        cout << "OPERACIÓN CANCELADA." << endl;
+    } else {
+        cout << "OPCIÓN INVÁLIDA." << endl;
     }
 }
 
