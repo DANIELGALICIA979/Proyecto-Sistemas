@@ -16,7 +16,9 @@ struct Usuario
 {
     string NomUsuario;
     string ContraUsuario;
-    double Dinero;
+    double Dinero = 0.0;
+    bool premium = false;
+    vector <string> contactos;
 };
 
 vector <Usuario> usuarios;
@@ -24,28 +26,40 @@ vector <Usuario> usuarios;
 //funciones prototipo xd
 void procesarTransaccion(double cantidad, string tipoPlazo);
 void ingresarDinero();
-void CreacionCuenta();
-void VisualizarUser();
+//void CreacionCuenta();
+Usuario* VisualizarUser();
+Usuario* CreacionCuenta();
+//void VisualizarUser();
 void ConsultarDinero(Usuario &usuario);
-void Menu();
+//void Menu();
+void Menu(Usuario& usuarioActual);
 void accesoVentanilla();
 void accesoAsesor();
-void acceso();
-void autenticacion();
+Usuario* acceso();
+Usuario* autenticacion();
 
 
 int main() {
-    
+    // Usuario de prueba (como en tu código original)
     Usuario user1;
     user1.NomUsuario = "Daniel";
     user1.ContraUsuario = "1234";
-    user1.Dinero = 0.00;
+    user1.Dinero = 1500.00;
+    user1.contactos = {"polla1", "polla2", "Aaron"};
+    user1.premium = true;
     usuarios.push_back(user1);
 
-    acceso();
+    // Obtenemos el usuario autenticado
+    Usuario* usuarioActual = acceso();
+    
+    if (usuarioActual != nullptr) {
+        cout << "\nBienvenido al sistema, " << usuarioActual->NomUsuario << "!" << endl;
 
-    
-    
+        // Pasamos el usuario al menú
+        Menu(*usuarioActual);
+    } else {
+        cout << "Sesión terminada." << endl;
+    }
 
     return 0;
 }
@@ -73,153 +87,109 @@ void procesarTransaccion(double cantidad, string tipoPlazo)
     mtx.unlock();
 }
 
-void ingresarDinero()
-{
-    string nombre;
+void ingresarDinero(Usuario& usuarioActual) {
     double cantidad;
     int plazo;
 
-    cout << "INGRESE SU NOMBRE DE USUARIO : ";
-    
-    cin>> nombre;
-    
-    while (true)
-    {
+    while (true) {
         cout << "MONTO A INGRESAR: $";
         if (cin >> cantidad) break;
-        {
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            cout << "Entrada invalida. Porfavor ingrese un numero." << endl; 
-    
-        }
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Entrada inválida. Por favor ingrese un número." << endl;
     }
     
-    cout << "SELECCIONE PLAZO (1. Corto, 2. Mediano, 3.Largo): ";
+    cout << "SELECCIONE PLAZO (1. Corto, 2. Mediano, 3. Largo): ";
     cin >> plazo;
 
     string tipoPlazo;
-    switch (plazo)
-    {
-    case 1: tipoPlazo = "corto";
-        break;
-
-    case 2: tipoPlazo = "mediano";
-        break;
-
-    case 3: tipoPlazo = "largo";
-        break;
-
-    default: tipoPlazo = "corto";
-        break;
+    switch (plazo) {
+        case 1: tipoPlazo = "corto"; break;
+        case 2: tipoPlazo = "mediano"; break;
+        case 3: tipoPlazo = "largo"; break;
+        default: tipoPlazo = "corto"; break;
     }
 
-    //Buscar al usuario
-    for (auto& user : usuarios)
-    {
-        if (user.NomUsuario == nombre)
-        {
-            //Procesar hilo separado
-            thread t(procesarTransaccion, cantidad, tipoPlazo);
-            t.detach();
-            //Actualizar saldo
-            this_thread::sleep_for(chrono::milliseconds(500));
-            user.Dinero += cantidad;
+    // Procesar en hilo separado
+    thread t(procesarTransaccion, cantidad, tipoPlazo);
+    t.detach();
+    
+    // Actualizar saldo
+    this_thread::sleep_for(chrono::milliseconds(500));
+    usuarioActual.Dinero += cantidad;
 
-            cout << "Saldo actualizado. Nuevo saldo: $" << user.Dinero << endl;
-            return;
-
-        }
-    }
-    cout << "Usuario no encontrado!" << endl;
+    cout << "Saldo actualizado. Nuevo saldo: $" << usuarioActual.Dinero << endl;
 }
 
-void CreacionCuenta(){
-    Usuario NuevoUSUARIO;
-    cout <<"INGRESE SU NOMBRE: "<<endl;
-    cin >> NuevoUSUARIO.NomUsuario;
-    cout <<"INGRESE SU CONTRASEÑA: "<<endl;
-    cin >> NuevoUSUARIO.ContraUsuario;
-    usuarios.push_back(NuevoUSUARIO);
-}
-
-void VisualizarUser(){
+// Cambia el tipo de retorno a Usuario*
+Usuario* VisualizarUser() {
     string Nombre;
     string Contrasena;
-    cout <<"INGRESE SU NOMBRE DE USUARIO: "<< endl;
+    cout << "INGRESE SU NOMBRE DE USUARIO: " << endl;
     cin >> Nombre;
-    cout <<"INGRESE SU CONTRASEÑA"<<endl;
+    cout << "INGRESE SU CONTRASEÑA: " << endl;
     cin >> Contrasena;
 
-    for(Usuario&user : usuarios)
-        if (user.NomUsuario == Nombre )
-        {
-            if (user.ContraUsuario == Contrasena) 
-            {
-                cout <<"Bienvenido: "<<Nombre<<endl;
-                return;
-            }
+    for (auto& user : usuarios) {
+        if (user.NomUsuario == Nombre && user.ContraUsuario == Contrasena) {
+            cout << "Bienvenido: " << Nombre << endl;
+            return &user; // Devuelve un puntero al usuario encontrado
         }
-        else
-        {
-            cout <<"NOMBRE NO EXISTENTE"<<endl;
-        }
+    }
+    
+    cout << "CREDENCIALES INCORRECTAS O USUARIO NO EXISTENTE" << endl;
+    return nullptr; // Devuelve nullptr si no se encuentra
 }
 
-void Menu(){
+// Cambia el tipo de retorno a Usuario*
+Usuario* CreacionCuenta() {
+    Usuario NuevoUSUARIO;
+    cout << "INGRESE SU NOMBRE: " << endl;
+    cin >> NuevoUSUARIO.NomUsuario;
+    cout << "INGRESE SU CONTRASEÑA: " << endl;
+    cin >> NuevoUSUARIO.ContraUsuario;
+    NuevoUSUARIO.Dinero = 0.0;
+    usuarios.push_back(NuevoUSUARIO);
+    return &usuarios.back(); // Devuelve un puntero al último usuario agregado
+}
+
+void Menu(Usuario& usuarioActual) {
     while (true) {
-        cout << "\n MENU DE ACCIONES: " << endl;;
+        cout << "\nMENU DE ACCIONES: " << endl;
         cout << "1. INGRESAR DINERO." << endl;
-        cout << "2. CONSULTAR SALDO."<< endl;
-        cout << "2. RETIRAR DINERO."<< endl;
-        cout << "3. DEPOSITAR A UNA CUENTA."<< endl;
-        cout << "4. AGREGAR CONTACTOS."<< endl;
-        cout << "5. DAR DE BAJA LA CUENTA."<< endl;
-        cout << "6. SALIR."<< endl;
+        cout << "2. CONSULTAR SALDO." << endl;
+        cout << "3. RETIRAR DINERO." << endl;
+        cout << "4. DEPOSITAR A UNA CUENTA." << endl;
+        cout << "5. AGREGAR CONTACTOS." << endl;
+        cout << "6. DAR DE BAJA LA CUENTA." << endl;
+        cout << "7. SALIR." << endl;
         cout << "DIGITE LA OPCION QUE DESEE REALIZAR: ";
 
         cin >> opcion;
-        switch (opcion)
-        {
+        switch (opcion) {
         case 1:
-            ingresarDinero();
+            ingresarDinero(usuarioActual);
             break;
 
         case 2:
-            {
-            string nombreIngresado;
-            cout << "INGRESE EL NOMBRE DE USUARIO A VERIFICAR";
-            cin >> nombreIngresado;
-            for (auto &user : usuarios) {
-                if (user.NomUsuario == nombreIngresado) {
-                    ConsultarDinero(user); 
-                    break;
-                }
-            }
-            }
-            
-            
+            ConsultarDinero(usuarioActual);
+            break;
         case 3:
-            cout << "RETIRAR DINERO"<<endl;
-            break;
-
-        case 4:
-            cout << "DEPOSITAR A UNA CUENTA" <<endl;
-            break;
-        
-        case 5:
-            cout << "AGREGAR CONTACTOS" <<endl;
-            break;
-
-        case 6:
-            cout << "DAR DE BAJA LA CUENTA" <<endl;
-            break;
-
-        case 7:
-            cout << "SALIR" <<endl;
-            return;
             
-        default: cout << "SELECCIONE UNA OPCION VALIDA!!" <<endl;
+            break;
+        case 4:
+            
+            break;
+        case 5:
+            
+            break;
+        case 6:
+            
+            break;
+        case 7:
+            return;
+        default:
+            cout << "Selecciona una opcion valida." << endl;
             break;
         }
     }
@@ -262,7 +232,7 @@ void accesoAsesor()
     }
 }
 
-void acceso(){
+Usuario* acceso() {  // Cambiamos el tipo de retorno a Usuario*
     int opcInicial;
     cout << "====================================" << endl;
     cout << "   SISTEMA BANCARIO - BIENVENIDO    " << endl;
@@ -273,30 +243,22 @@ void acceso(){
     cout << "Seleccione una opcion: ";
     cin >> opcInicial;
 
-    switch (opcInicial)
-    {
+    switch (opcInicial) {
     case 1:
         accesoVentanilla();
-        break;
-
+        return nullptr;  // No hay usuario en este caso
     case 2:
         accesoAsesor();
-        break;
-    
+        return nullptr;  // No hay usuario en este caso
     case 3:
-        autenticacion();
-        Menu();
-        break;
-    
+        return autenticacion();  // Devuelve el usuario autenticado
     default:
         cout << "Opcion no valida. Intente nuevamente." << endl;
-        acceso();
-        break;
+        return acceso();  // Llamada recursiva
     }
 }
 
-void autenticacion()
-{
+Usuario* autenticacion() {
     int opcUsuario;
     system("clear");
     cout << "SELECCIONE SU TIPO DE USUARIO: " << endl;
@@ -305,28 +267,58 @@ void autenticacion()
     cout << "Opcion: ";
     cin >> opcUsuario;
 
-    switch (opcUsuario)
-    {
+    switch (opcUsuario) {
     case 1:
-        VisualizarUser();
-        break;
-    
+        return VisualizarUser();  // Devuelve el usuario encontrado
     case 2:
-        CreacionCuenta();
-        break;
+        return CreacionCuenta(); // Devuelve el nuevo usuario
     default:
-        cout << "Porfavor digite una opcion valida!"<< endl;
-        cout << endl;
-        autenticacion();
-        break;
+        cout << "Por favor digite una opcion valida!" << endl;
+        return autenticacion();  // Llamada recursiva
     }
 }
 
 void ConsultarDinero(Usuario &usuario){
-        double Money;
-        cout << "REVISANDO SALDO DISPONIBLE" <<endl;
-        cout << "SU SALDO ACTUAL ES: " << usuario.Dinero <<endl;
+    double Money;
+    cout << "REVISANDO SALDO DISPONIBLE" <<endl;
+    cout << "SU SALDO ACTUAL ES: " << usuario.Dinero <<endl;
+}
+
+void depositarMoney(Usuario &usuarioActual)
+{
+    double cantidad;
+    int plazo;
+
+
+    
+    
+    while (true) {
+        cout << "MONTO A INGRESAR: $";
+        if (cin >> cantidad) break;
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Entrada inválida. Por favor ingrese un número." << endl;
+    }
+    
+    cout << "SELECCIONE PLAZO (1. Corto, 2. Mediano, 3. Largo): ";
+    cin >> plazo;
+
+    string tipoPlazo;
+    switch (plazo) {
+        case 1: tipoPlazo = "corto"; break;
+        case 2: tipoPlazo = "mediano"; break;
+        case 3: tipoPlazo = "largo"; break;
+        default: tipoPlazo = "corto"; break;
     }
 
+    // Procesar en hilo separado
+    thread t(procesarTransaccion, cantidad, tipoPlazo);
+    t.detach();
+    
+    // Actualizar saldo
+    this_thread::sleep_for(chrono::milliseconds(500));
+    usuarioActual.Dinero -= cantidad;
 
+    cout << "Saldo actualizado. Nuevo saldo: $" << usuarioActual.Dinero << endl;
+}
 
