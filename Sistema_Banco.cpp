@@ -7,8 +7,8 @@
 #include <cstdlib>
 #include <ctime>
 
-
 using namespace std;
+
 mutex mtx; //Sincronizacion de hilos dice el dipsik
 int opcion;
 
@@ -25,29 +25,56 @@ vector <Usuario> usuarios;
 
 //funciones prototipo xd
 void procesarTransaccion(double cantidad, string tipoPlazo);
-void ingresarDinero();
-//void CreacionCuenta();
+void ingresarDinero(Usuario& usuarioActual);
+void agregarContactos(Usuario& usuarioActual);
 Usuario* VisualizarUser();
 Usuario* CreacionCuenta();
-//void VisualizarUser();
 void ConsultarDinero(Usuario &usuario);
-//void Menu();
 void Menu(Usuario& usuarioActual);
 void accesoVentanilla();
 void accesoAsesor();
 Usuario* acceso();
 Usuario* autenticacion();
+void depositarDinero(Usuario &usuarioActual);
 
 
 int main() {
     // Usuario de prueba (como en tu código original)
     Usuario user1;
+    Usuario user2;
+    Usuario user3;
+    Usuario user4;
+    Usuario user5;
+
     user1.NomUsuario = "Daniel";
     user1.ContraUsuario = "1234";
     user1.Dinero = 1500.00;
-    user1.contactos = {"polla1", "polla2", "Aaron"};
     user1.premium = true;
+
+    user2.NomUsuario = "Juan";
+    user2.ContraUsuario = "1234";
+    user2.Dinero = 1500.00;
+    
+    user3.NomUsuario = "David";
+    user3.ContraUsuario = "1234";
+    user3.Dinero = 1500.00;
+    user3.premium = true;
+
+    user4.NomUsuario = "Alan";
+    user4.ContraUsuario = "1234";
+    user4.Dinero = 1500.00;
+    user4.premium = false;
+
+    user5.NomUsuario = "Francisco";
+    user5.ContraUsuario = "1234";
+    user5.Dinero = 1500.00;
+    user5.premium = true;
+
     usuarios.push_back(user1);
+    usuarios.push_back(user2);
+    usuarios.push_back(user3);
+    usuarios.push_back(user4);
+    usuarios.push_back(user5);
 
     // Obtenemos el usuario autenticado
     Usuario* usuarioActual = acceso();
@@ -82,8 +109,7 @@ void procesarTransaccion(double cantidad, string tipoPlazo)
     cout << "Procesando transaccion (" << tipoPlazo << " plazo) ..." << endl;
     this_thread::sleep_for(chrono::seconds(tiempo));
     mtx.lock();
-    cout << "endl";
-    cout << "Transaccion completada: $" << cantidad << " (" << tipoPlazo << " plazo)" << endl;
+    cout << "\nTransaccion completada: $" << cantidad << " (" << tipoPlazo << " plazo)" << endl;
     mtx.unlock();
 }
 
@@ -121,7 +147,6 @@ void ingresarDinero(Usuario& usuarioActual) {
     cout << "Saldo actualizado. Nuevo saldo: $" << usuarioActual.Dinero << endl;
 }
 
-// Cambia el tipo de retorno a Usuario*
 Usuario* VisualizarUser() {
     string Nombre;
     string Contrasena;
@@ -132,16 +157,13 @@ Usuario* VisualizarUser() {
 
     for (auto& user : usuarios) {
         if (user.NomUsuario == Nombre && user.ContraUsuario == Contrasena) {
-            cout << "Bienvenido: " << Nombre << endl;
             return &user; // Devuelve un puntero al usuario encontrado
         }
     }
-    
     cout << "CREDENCIALES INCORRECTAS O USUARIO NO EXISTENTE" << endl;
     return nullptr; // Devuelve nullptr si no se encuentra
 }
 
-// Cambia el tipo de retorno a Usuario*
 Usuario* CreacionCuenta() {
     Usuario NuevoUSUARIO;
     cout << "INGRESE SU NOMBRE: " << endl;
@@ -178,10 +200,10 @@ void Menu(Usuario& usuarioActual) {
             
             break;
         case 4:
-            
+            depositarDinero(usuarioActual);
             break;
         case 5:
-            
+            agregarContactos(usuarioActual);
             break;
         case 6:
             
@@ -232,7 +254,7 @@ void accesoAsesor()
     }
 }
 
-Usuario* acceso() {  // Cambiamos el tipo de retorno a Usuario*
+Usuario* acceso() {
     int opcInicial;
     cout << "====================================" << endl;
     cout << "   SISTEMA BANCARIO - BIENVENIDO    " << endl;
@@ -278,47 +300,94 @@ Usuario* autenticacion() {
     }
 }
 
-void ConsultarDinero(Usuario &usuario){
+void ConsultarDinero(Usuario& usuarioActual){
     double Money;
     cout << "REVISANDO SALDO DISPONIBLE" <<endl;
-    cout << "SU SALDO ACTUAL ES: " << usuario.Dinero <<endl;
+    cout << "SU SALDO ACTUAL ES: " << usuarioActual.Dinero <<endl;
 }
 
-void depositarMoney(Usuario &usuarioActual)
+void agregarContactos(Usuario& usuarioActual)
+{
+    string nombreContacto;
+    cout << "Ingresa el nombre del contacto a agregar: ";
+    cin >> nombreContacto;
+
+    if (nombreContacto == usuarioActual.NomUsuario)
+    {
+        cout << "No puedes agregarte a ti mismo como contacto." << endl;
+        return;
+    }
+
+    for (const auto& contacto : usuarioActual.contactos)
+    {
+        if (contacto == nombreContacto)
+        {
+            cout << "Este contacto ya existe en tu lista" << endl;
+            return;
+        }
+    }
+
+    bool usuarioExiste = false;
+    for (const auto user : usuarios)
+    {
+        if (user.NomUsuario == nombreContacto)
+        {
+            usuarioExiste = true;
+            break;
+        }
+    }
+    
+    if (usuarioExiste)
+    {
+        usuarioActual.contactos.push_back(nombreContacto);
+        cout << "Haz  agregado exitosamente a : " << nombreContacto << endl;
+        cout << "\nTus contactos:" << endl;
+        for (const auto& contacto : usuarioActual.contactos)
+        {
+            cout << "- " << contacto << endl;
+        }
+    }
+    else
+    {
+        cout << "El usuario '" << nombreContacto << "' no existe en el sistema." << endl; 
+    }
+}
+
+void depositarDinero(Usuario &usuarioActual)
 {
     double cantidad;
     int plazo;
-
-
-    
-    
-    while (true) {
-        cout << "MONTO A INGRESAR: $";
-        if (cin >> cantidad) break;
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        cout << "Entrada inválida. Por favor ingrese un número." << endl;
-    }
-    
-    cout << "SELECCIONE PLAZO (1. Corto, 2. Mediano, 3. Largo): ";
-    cin >> plazo;
-
-    string tipoPlazo;
-    switch (plazo) {
-        case 1: tipoPlazo = "corto"; break;
-        case 2: tipoPlazo = "mediano"; break;
-        case 3: tipoPlazo = "largo"; break;
-        default: tipoPlazo = "corto"; break;
+    bool esContacto = false;
+    string nombreContacto;
+    cout << "Ingresa el nombre del contacto al que vas a depositar: ";
+    cin >> nombreContacto;
+    for (const auto contacto : usuarioActual.contactos)
+    {
+        if (contacto == nombreContacto)
+        {
+            esContacto = true;
+            break;
+        }
     }
 
-    // Procesar en hilo separado
-    thread t(procesarTransaccion, cantidad, tipoPlazo);
-    t.detach();
-    
-    // Actualizar saldo
-    this_thread::sleep_for(chrono::milliseconds(500));
-    usuarioActual.Dinero -= cantidad;
-
-    cout << "Saldo actualizado. Nuevo saldo: $" << usuarioActual.Dinero << endl;
+    if (esContacto)
+    {
+        cout << "\nDigita la cantidad que vas a depositar: $";
+        cin >> cantidad;
+        if (cantidad > usuarioActual.Dinero)
+        {
+            cout << "Fondos insuficientes para realizar el deposito." << endl;
+            return;
+        }
+        else
+        {
+            usuarioActual.Dinero -= cantidad;
+            procesarTransaccion(cantidad, "mediano");
+        }    
+    }
+    else
+    {
+        cout << "El usuario " << nombreContacto << " no es tu contacto o no existe en el sistema." << endl;
+    }
 }
 
