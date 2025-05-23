@@ -36,6 +36,7 @@ void accesoAsesor();
 Usuario* acceso();
 Usuario* autenticacion();
 void depositarDinero(Usuario &usuarioActual);
+void TarjetaT();
 
 
 int main() {
@@ -286,6 +287,7 @@ Usuario* autenticacion() {
     cout << "SELECCIONE SU TIPO DE USUARIO: " << endl;
     cout << "1. Acceso con cuenta existente." << endl;
     cout << "2. Registro de nuevo cliente." << endl;
+    cout << "3. Operar con tarjeta temporal" << endl;
     cout << "Opcion: ";
     cin >> opcUsuario;
 
@@ -294,10 +296,35 @@ Usuario* autenticacion() {
         return VisualizarUser();  // Devuelve el usuario encontrado
     case 2:
         return CreacionCuenta(); // Devuelve el nuevo usuario
+    case 3:
+        TarjetaT();
+        return nullptr;
     default:
         cout << "Por favor digite una opcion valida!" << endl;
         return autenticacion();  // Llamada recursiva
     }
+}
+
+void TarjetaT(){
+    string nameT;
+    double CantidadT;
+    double CantidadINI;
+    cout << "INGRESE LA CANTIDAD QUE VA A TENER LA TARJETA TEMPORAL" << endl;
+    cin >> CantidadINI;
+    cout << "INGRESE EL NOMBRE DE USUARIO A DEPOSITAR"<< endl;
+    cin >> nameT;
+
+    for (auto& user : usuarios) {
+        if (user.NomUsuario == nameT) {
+            cout << "INGRESE LA CANTIDAD A DEPOSITAR" << endl;
+            cin >> CantidadT;
+            user.NomUsuario += CantidadT;
+            CantidadINI -= CantidadT;
+            cout << "SU SALDO DISPONIBLE ES: " << CantidadINI << endl;
+        }
+    }
+
+
 }
 
 void ConsultarDinero(Usuario& usuarioActual){
