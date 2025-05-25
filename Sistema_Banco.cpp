@@ -24,6 +24,12 @@ struct Usuario
 
 vector <Usuario> usuarios;
 
+//es para simular los demas clientes en la fila
+struct ClienteEnEspera {
+    string nombre;
+    int tiempoEstimado; 
+};
+
 //funciones prototipo xd
 void procesarTransaccion(double cantidad, string tipoPlazo);
 void ingresarDinero(Usuario& usuarioActual);
@@ -33,7 +39,7 @@ Usuario* VisualizarUser();
 Usuario* CreacionCuenta();
 void ConsultarDinero(Usuario &usuario);
 void Menu(Usuario& usuarioActual);
-void accesoVentanilla();
+void asignarVentanilla();
 void accesoAsesor();
 Usuario* acceso();
 Usuario* autenticacion();
@@ -43,7 +49,6 @@ void EliminarCUENTA(Usuario& usuarioActual);
 
 
 int main() {
-    // Usuario de prueba (como en tu código original)
     Usuario user1;
     Usuario user2;
     Usuario user3;
@@ -53,26 +58,22 @@ int main() {
     user1.NomUsuario = "Daniel";
     user1.ContraUsuario = "1234";
     user1.Dinero = 1500.00;
-    user1.premium = true;
 
     user2.NomUsuario = "Juan";
-    user2.ContraUsuario = "1234";
+    user2.ContraUsuario = "1111";
     user2.Dinero = 1500.00;
     
     user3.NomUsuario = "David";
     user3.ContraUsuario = "1234";
     user3.Dinero = 1500.00;
-    user3.premium = true;
 
     user4.NomUsuario = "Alan";
     user4.ContraUsuario = "1234";
     user4.Dinero = 1500.00;
-    user4.premium = false;
 
     user5.NomUsuario = "Francisco";
     user5.ContraUsuario = "1234";
     user5.Dinero = 1500.00;
-    user5.premium = true;
 
     usuarios.push_back(user1);
     usuarios.push_back(user2);
@@ -94,7 +95,6 @@ int main() {
 
     return 0;
 }
-
 
 //Simular proceso de transacciones
 void procesarTransaccion(double cantidad, string tipoPlazo)
@@ -211,9 +211,10 @@ void Menu(Usuario& usuarioActual) {
             break;
         case 6:
             EliminarCUENTA(usuarioActual);
-            main();
-            break;
+            acceso();
+            return;
         case 7:
+            cout << "Sesion cerrada. Hasta la proxima." << endl;
             return;
         default:
             cout << "Selecciona una opcion valida." << endl;
@@ -222,40 +223,78 @@ void Menu(Usuario& usuarioActual) {
     }
 }
 
-void accesoVentanilla()
-{
+//con algoritmo Shortest Job First 
+void asignarVentanilla() {
     system("clear");
-    srand(time(0));
-    int ventanilla = rand() % 5 + 1; //Numero aleatorio entre 1 y 5
-    system("clear");
-    cout << "Favor de pasar a ventanilla numero: " << ventanilla << endl;
+    
+    int N = rand()% 6 + 1;
+    
+    vector<ClienteEnEspera> cola = {
+        {"Daniel", N},
+        {"David", N},
+        {"Alan", N},
+        {"Francisco", N}
+    };
+    
+    
+    ClienteEnEspera NuevoCLIENTE = {"NuevoCLIENTE", N}; // Cambia el número según necesites
+    cola.push_back(NuevoCLIENTE);
+
+
+    // Ordenar por tiempo 
+    sort(cola.begin(), cola.end(), [](const ClienteEnEspera& a, const ClienteEnEspera& b) {
+        return a.tiempoEstimado < b.tiempoEstimado;
+    });
+
+    // Simular atención por ventanilla 
+    int ventanilla = 1;
+    for (auto& cliente : cola) {
+        cout << "\n" << cliente.nombre << " AVANZE A VENTANILLA " << ventanilla << endl;
+        cout << "EN VENTANILLA......."<<endl;
+        this_thread::sleep_for(chrono::seconds(5));//simulacion del tiempo en ventanilla
+        cout << "CLIENTE " << cliente.nombre << " ATENDIDO." << endl;
+        ventanilla = (ventanilla % 5) + 1; // cambia entre ventanillas 1 a 5
+    }
 }
 
 void accesoAsesor()
 {
     system("clear");
     srand(time(0));
-    vector<string> asesores = {"Juan Perez", "Maria Garcia", "Carlos Lopez"};
-    int numAsesor = rand() % 3 + 1; //Numero aleatorio entre 1 y 3
-    switch (numAsesor)
-    {
-    case 1:
-        system("clear");
-        cout << "Pase con el asesor" << asesores[numAsesor-1] << endl;
-        break;
-    case 2:
-        system("clear");
-        cout << "Pase con la asesora: " << asesores[numAsesor-1] << endl;
-        break;
+    int opc;
+    cout << "BIENVENIDO SELECCIONE SU TIPO DE CUENTA" <<endl;
+    cout << "1 CUENTA PREFERENCIAL"<<endl;
+    cout << "2 CUENTA ESTANDAR"<<endl;
+    cout << "---------------------" << endl;
+    cin >> opc;
     
-    case 3:
-        system("clear");
-        cout << "Pase con el asesor: " << asesores[numAsesor-1] << endl;
-        break;
+    
+    if(opc == 1){
+        cout << "\nSE LE HA ASIGNADO CON NUESTRO ASESOR ALEJANDRO RUIZ"<<endl;
+    }
+    if(opc == 2){
+        vector<string> asesores = {"JUAN PEREZ", "MARIA GARCIA", "CARLOS LOPEZ"};
+        int numAsesor = rand() % 3 + 1; //Numero aleatorio entre 1 y 3
+        switch (numAsesor)
+        {
+        case 1:
+            system("clear");
+            cout << "SE LE HA ASIGNADO AL ASESOR" << asesores[numAsesor-1] << endl;
+            break;
+        case 2:
+            system("clear");
+            cout << "SE LE HA ASIGNADO A LA ASESORA: " << asesores[numAsesor-1] << endl;
+            break;
         
-    default:    
-        cout << "Pase con el asesor: " << asesores[0] << endl;
-        break;
+        case 3:
+            system("clear");
+            cout << "SE LE HA ASIGNADO AL ASESOR: " << asesores[numAsesor-1] << endl;
+            break;
+            
+        default:    
+            cout << "SE LE HA ASIGNADO AL ASESOR: " << asesores[0] << endl;
+            break;
+    }
     }
 }
 
@@ -272,7 +311,7 @@ Usuario* acceso() {
 
     switch (opcInicial) {
     case 1:
-        accesoVentanilla();
+        asignarVentanilla();
         return nullptr;  // No hay usuario en este caso
     case 2:
         accesoAsesor();
@@ -467,4 +506,3 @@ void EliminarCUENTA(Usuario& usuarioActual) {
         cout << "OPCIÓN INVÁLIDA." << endl;
     }
 }
-
