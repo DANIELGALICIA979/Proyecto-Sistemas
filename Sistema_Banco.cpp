@@ -7,11 +7,11 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <queue>
+#include <condition_variable>
+#include <future>
 
 using namespace std;
-
-mutex mtx; //Sincronizacion de hilos dice el dipsik
-int opcion;
 
 struct Usuario
 {
@@ -22,20 +22,30 @@ struct Usuario
     vector <string> contactos;
 };
 
-vector <Usuario> usuarios;
-
 //es para simular los demas clientes en la fila
-struct ClienteEnEspera {
+struct ClienteEnEspera 
+{
     string nombre;
     int tiempoEstimado; 
 };
 
+mutex mtx; //Sincronizacion de hilos
+int opcion;
+vector <Usuario> usuarios;
+queue<pair<double, bool>> colaTransacciones;
+mutex mtxCola;
+condition_variable cv;
+bool detenerSimulacion = false;
+
 //funciones prototipo xd
-void procesarTransaccion(double cantidad, string tipoPlazo);
+void procesadorTransacciones();
+void detenerProcesador();
+void iniciarTransaccion(double cantidad, bool esPremium);
+void procesarTransaccion(double cantidad, bool esPremium);
 void ingresarDinero(Usuario& usuarioActual);
 void RetirarDinero(Usuario& usuarioActual);
 void agregarContactos(Usuario& usuarioActual);
-Usuario* VisualizarUser();
+Usuario* verificarUsuario();
 Usuario* CreacionCuenta();
 void ConsultarDinero(Usuario &usuario);
 void Menu(Usuario& usuarioActual);
@@ -45,10 +55,11 @@ Usuario* acceso();
 Usuario* autenticacion();
 void depositarDinero(Usuario &usuarioActual);
 void TarjetaT();
-void EliminarCUENTA(Usuario& usuarioActual);
+void EliminarCuenta(Usuario& usuarioActual);
 
 
-int main() {
+int main() 
+{
     Usuario user1;
     Usuario user2;
     Usuario user3;
@@ -66,6 +77,7 @@ int main() {
     user3.NomUsuario = "David";
     user3.ContraUsuario = "1234";
     user3.Dinero = 1500.00;
+    user3.premium = true;
 
     user4.NomUsuario = "Alan";
     user4.ContraUsuario = "1234";
@@ -84,74 +96,109 @@ int main() {
     // Obtenemos el usuario autenticado
     Usuario* usuarioActual = acceso();
     
-    if (usuarioActual != nullptr) {
+    if (usuarioActual != nullptr) 
+    {
         cout << "\nBienvenido al sistema, " << usuarioActual->NomUsuario << "!" << endl;
 
         // Pasamos el usuario al menú
         Menu(*usuarioActual);
-    } else {
+    } 
+    else 
+    {
         cout << "Sesión terminada." << endl;
     }
 
     return 0;
 }
 
-//Simular proceso de transacciones
-void procesarTransaccion(double cantidad, string tipoPlazo)
+void procesadorTransacciones() 
 {
-    int tiempo;
-    if (tipoPlazo == "corto")
+    while (true) 
     {
-        tiempo = 1; //Corto plazo    
-    }
-    else if (tipoPlazo == "mediano")
-    {
-        tiempo == 3; //mediano plazo 
-    }
-    else tiempo == 5; //largo plazo
+        unique_lock<mutex> lock(mtxCola);
+        cv.wait(lock, []{ return !colaTransacciones.empty() || detenerSimulacion; });
+        
+        if (detenerSimulacion) break;
 
-    cout << "Procesando transaccion (" << tipoPlazo << " plazo) ..." << endl;
-    this_thread::sleep_for(chrono::seconds(tiempo));
-    mtx.lock();
-    cout << "\nTransaccion completada: $" << cantidad << " (" << tipoPlazo << " plazo)" << endl;
-    mtx.unlock();
+        // Extraer transacción (prioridad a premium)
+        auto transaccion = colaTransacciones.front();
+        colaTransacciones.pop();
+        lock.unlock();
+
+        // Calcular tiempo según prioridad
+        int tiempo = transaccion.second ? 1 : 3; // Premium: 1s, Normal: 3s
+
+        // Procesar (sin mostrar detalles internos)
+        this_thread::sleep_for(chrono::seconds(tiempo));
+        
+        mtx.lock();
+        cout << "\nTransacción completada: $" << transaccion.first 
+             << (transaccion.second ? " (Cliente Premium)" : "") << endl;
+        mtx.unlock();
+    }
 }
 
-void ingresarDinero(Usuario& usuarioActual) {
-    double cantidad;
-    int plazo;
+// Función para detener
+void detenerProcesador() {
+    {
+        lock_guard<mutex> lock(mtxCola);
+        detenerSimulacion = true;
+    }
+    cv.notify_all();
+}
 
+// Función para iniciar transacciones
+void iniciarTransaccion(double cantidad, bool esPremium) 
+{
+    lock_guard<mutex> lock(mtxCola);
+    colaTransacciones.push({cantidad, esPremium});
+    cv.notify_one();
+}
+
+//Simular proceso de transacciones
+// Modificar la función original para usar el sistema
+void procesarTransaccion(double cantidad, bool esPremium) 
+{
+    // Tiempos basados solo en prioridad
+    int tiempo = esPremium ? 1 : 3; // Premium: 1s, Normal: 3s
+    
+    // Simulación del procesamiento
+    this_thread::sleep_for(chrono::seconds(tiempo));
+    
+    // Bloqueo para salida segura
+    lock_guard<mutex> lock(mtx);
+    cout << "\nTransacción de $" << cantidad << " completada"  << (esPremium ? " [PRIORIDAD PREMIUM]" : "") << endl;
+}
+
+void ingresarDinero(Usuario& usuarioActual) 
+{
+    
+    double cantidad;
     while (true) {
         cout << "MONTO A INGRESAR: $";
         if (cin >> cantidad) break;
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        cout << "Entrada inválida. Por favor ingrese un número." << endl;
+        // ... (manejo errores)
     }
     
-    cout << "SELECCIONE PLAZO (1. Corto, 2. Mediano, 3. Largo): ";
-    cin >> plazo;
-
-    string tipoPlazo;
-    switch (plazo) {
-        case 1: tipoPlazo = "corto"; break;
-        case 2: tipoPlazo = "mediano"; break;
-        case 3: tipoPlazo = "largo"; break;
-        default: tipoPlazo = "corto"; break;
-    }
-
-    // Procesar en hilo separado
-    thread t(procesarTransaccion, cantidad, tipoPlazo);
-    t.detach();
+    system("clear");
+    auto resultado = async(launch::async, [cantidad, esPremium = usuarioActual.premium]{
+        int tiempo = esPremium ? 1 : 3;
+        this_thread::sleep_for(chrono::seconds(tiempo));
+        lock_guard<mutex> lock(mtx);
+        //cout << "\n[✓] Transacción de $" << cantidad << " completada\n";
+    });
     
-    // Actualizar saldo
-    this_thread::sleep_for(chrono::milliseconds(500));
-    usuarioActual.Dinero += cantidad;
-
-    cout << "Saldo actualizado. Nuevo saldo: $" << usuarioActual.Dinero << endl;
+    cout << "Procesando... (espere)";
+    procesarTransaccion(cantidad, usuarioActual.premium);
+    resultado.get(); // Bloquea hasta terminar
+    
+    usuarioActual.Dinero += cantidad; // Actualizar saldo
+    cout << "\nNuevo saldo: $" << usuarioActual.Dinero << endl;
+    //system("clear");
 }
 
-Usuario* VisualizarUser() {
+Usuario* verificarUsuario() 
+{
     string Nombre;
     string Contrasena;
     cout << "INGRESE SU NOMBRE DE USUARIO: " << endl;
@@ -159,8 +206,10 @@ Usuario* VisualizarUser() {
     cout << "INGRESE SU CONTRASEÑA: " << endl;
     cin >> Contrasena;
 
-    for (auto& user : usuarios) {
-        if (user.NomUsuario == Nombre && user.ContraUsuario == Contrasena) {
+    for (auto& user : usuarios) 
+    {
+        if (user.NomUsuario == Nombre && user.ContraUsuario == Contrasena) 
+        {
             return &user; // Devuelve un puntero al usuario encontrado
         }
     }
@@ -168,7 +217,8 @@ Usuario* VisualizarUser() {
     return nullptr; // Devuelve nullptr si no se encuentra
 }
 
-Usuario* CreacionCuenta() {
+Usuario* CreacionCuenta() 
+{
     Usuario NuevoUSUARIO;
     cout << "INGRESE SU NOMBRE: " << endl;
     cin >> NuevoUSUARIO.NomUsuario;
@@ -179,8 +229,11 @@ Usuario* CreacionCuenta() {
     return &usuarios.back(); // Devuelve un puntero al último usuario agregado
 }
 
-void Menu(Usuario& usuarioActual) {
-    while (true) {
+void Menu(Usuario& usuarioActual) 
+{
+    while (true) 
+    {
+        //system("clear");
         cout << "\nMENU DE ACCIONES: " << endl;
         cout << "1. INGRESAR DINERO." << endl;
         cout << "2. CONSULTAR SALDO." << endl;
@@ -192,11 +245,11 @@ void Menu(Usuario& usuarioActual) {
         cout << "DIGITE LA OPCION QUE DESEE REALIZAR: ";
 
         cin >> opcion;
-        switch (opcion) {
+        switch (opcion) 
+        {
         case 1:
             ingresarDinero(usuarioActual);
             break;
-
         case 2:
             ConsultarDinero(usuarioActual);
             break;
@@ -210,9 +263,13 @@ void Menu(Usuario& usuarioActual) {
             agregarContactos(usuarioActual);
             break;
         case 6:
-            EliminarCUENTA(usuarioActual);
-            acceso();
-            return;
+            EliminarCuenta(usuarioActual);
+            if (usuarioActual.NomUsuario.empty()) 
+            { 
+                acceso();
+                return;
+            }
+            break; // Si se canceló, continúa en el menú
         case 7:
             cout << "Sesion cerrada. Hasta la proxima." << endl;
             return;
@@ -224,31 +281,28 @@ void Menu(Usuario& usuarioActual) {
 }
 
 //con algoritmo Shortest Job First 
-void asignarVentanilla() {
+void asignarVentanilla() 
+{
     system("clear");
     
     int N = rand()% 6 + 1;
     
-    vector<ClienteEnEspera> cola = {
-        {"Daniel", N},
-        {"David", N},
-        {"Alan", N},
-        {"Francisco", N}
-    };
-    
+    vector<ClienteEnEspera> cola = {{"Daniel", N},{"David", N},{"Alan", N},{"Francisco", N}};
     
     ClienteEnEspera NuevoCLIENTE = {"NuevoCLIENTE", N}; // Cambia el número según necesites
     cola.push_back(NuevoCLIENTE);
 
 
     // Ordenar por tiempo 
-    sort(cola.begin(), cola.end(), [](const ClienteEnEspera& a, const ClienteEnEspera& b) {
+    sort(cola.begin(), cola.end(), [](const ClienteEnEspera& a, const ClienteEnEspera& b) 
+    {
         return a.tiempoEstimado < b.tiempoEstimado;
     });
 
     // Simular atención por ventanilla 
     int ventanilla = 1;
-    for (auto& cliente : cola) {
+    for (auto& cliente : cola) 
+    {
         cout << "\n" << cliente.nombre << " AVANZE A VENTANILLA " << ventanilla << endl;
         cout << "EN VENTANILLA......."<<endl;
         this_thread::sleep_for(chrono::seconds(5));//simulacion del tiempo en ventanilla
@@ -269,10 +323,12 @@ void accesoAsesor()
     cin >> opc;
     
     
-    if(opc == 1){
+    if(opc == 1)
+    {
         cout << "\nSE LE HA ASIGNADO CON NUESTRO ASESOR ALEJANDRO RUIZ"<<endl;
     }
-    if(opc == 2){
+    if(opc == 2)
+    {
         vector<string> asesores = {"JUAN PEREZ", "MARIA GARCIA", "CARLOS LOPEZ"};
         int numAsesor = rand() % 3 + 1; //Numero aleatorio entre 1 y 3
         switch (numAsesor)
@@ -294,11 +350,12 @@ void accesoAsesor()
         default:    
             cout << "SE LE HA ASIGNADO AL ASESOR: " << asesores[0] << endl;
             break;
-    }
+        }
     }
 }
 
-Usuario* acceso() {
+Usuario* acceso() 
+{
     int opcInicial;
     cout << "====================================" << endl;
     cout << "   SISTEMA BANCARIO - BIENVENIDO    " << endl;
@@ -309,7 +366,8 @@ Usuario* acceso() {
     cout << "Seleccione una opcion: ";
     cin >> opcInicial;
 
-    switch (opcInicial) {
+    switch (opcInicial) 
+    {
     case 1:
         asignarVentanilla();
         return nullptr;  // No hay usuario en este caso
@@ -324,7 +382,8 @@ Usuario* acceso() {
     }
 }
 
-Usuario* autenticacion() {
+Usuario* autenticacion() 
+{
     int opcUsuario;
     system("clear");
     cout << "SELECCIONE SU TIPO DE USUARIO: " << endl;
@@ -334,9 +393,10 @@ Usuario* autenticacion() {
     cout << "Opcion: ";
     cin >> opcUsuario;
 
-    switch (opcUsuario) {
+    switch (opcUsuario) 
+    {
     case 1:
-        return VisualizarUser();  // Devuelve el usuario encontrado
+        return verificarUsuario();  // Devuelve el usuario encontrado
     case 2:
         return CreacionCuenta(); // Devuelve el nuevo usuario
     case 3:
@@ -348,7 +408,8 @@ Usuario* autenticacion() {
     }
 }
 
-void TarjetaT(){
+void TarjetaT()
+{
     string nameT;
     double CantidadT;
     double CantidadINI;
@@ -357,8 +418,10 @@ void TarjetaT(){
     cout << "INGRESE EL NOMBRE DE USUARIO A DEPOSITAR"<< endl;
     cin >> nameT;
 
-    for (auto& user : usuarios) {
-        if (user.NomUsuario == nameT) {
+    for (auto& user : usuarios) 
+    {
+        if (user.NomUsuario == nameT) 
+        {
             cout << "INGRESE LA CANTIDAD A DEPOSITAR" << endl;
             cin >> CantidadT;
             user.NomUsuario += CantidadT;
@@ -366,18 +429,19 @@ void TarjetaT(){
             cout << "SU SALDO DISPONIBLE ES: " << CantidadINI << endl;
         }
     }
-
-
 }
 
-void ConsultarDinero(Usuario& usuarioActual){
+void ConsultarDinero(Usuario& usuarioActual)
+{
+    system("clear");
     double Money;
     cout << "REVISANDO SALDO DISPONIBLE" <<endl;
-    cout << "SU SALDO ACTUAL ES: " << usuarioActual.Dinero <<endl;
+    cout << usuarioActual.NomUsuario << " tu saldo actual es: $" << usuarioActual.Dinero <<endl;
 }
 
 void agregarContactos(Usuario& usuarioActual)
 {
+    system("clear");
     string nombreContacto;
     cout << "Ingresa el nombre del contacto a agregar: ";
     cin >> nombreContacto;
@@ -425,6 +489,7 @@ void agregarContactos(Usuario& usuarioActual)
 
 void depositarDinero(Usuario &usuarioActual)
 {
+    system("clear");
     double cantidad;
     int plazo;
     bool esContacto = false;
@@ -452,7 +517,7 @@ void depositarDinero(Usuario &usuarioActual)
         else
         {
             usuarioActual.Dinero -= cantidad;
-            procesarTransaccion(cantidad, "mediano");
+            procesarTransaccion(cantidad, usuarioActual.premium);
         }    
     }
     else
@@ -461,48 +526,66 @@ void depositarDinero(Usuario &usuarioActual)
     }
 }
 
-void RetirarDinero(Usuario& usuarioActual) {
+void RetirarDinero(Usuario& usuarioActual) 
+{
     double DineroRET;
     cout << "INGRESE LA CANTIDAD QUE DESEA RETIRAR: ";
     cin >> DineroRET;
 
-    if (DineroRET <= 0) {
+    if (DineroRET <= 0) 
+    {
         cout << "CANTIDAD NO VALIDA. INGRESE UN MONTO POSITIVO." << endl;
     } 
-    else if (DineroRET <= usuarioActual.Dinero) {
+    else if (DineroRET <= usuarioActual.Dinero) 
+    {
         usuarioActual.Dinero -= DineroRET;
         cout << "RETIRO EXITOSO" << endl;
     } 
-    else {
+    else 
+    {
         cout << "FONDOS INSUFICIENTES" << endl;
     }
 }
 
-void EliminarCUENTA(Usuario& usuarioActual) {
+void EliminarCuenta(Usuario& usuarioActual) 
+{
     int opcion;
-    cout << "¿DESEA ELIMINAR SU CUENTA?" << endl;
-    cout << "| 'SI' inserte 1 || 'NO' inserte 2 |" << endl;
+    cout << "\n=== CONFIRMACIÓN DE ELIMINACIÓN ===" << endl;
+    cout << "1. CONFIRMAR ELIMINACIÓN" << endl;
+    cout << "2. CANCELAR" << endl;
+    cout << "Su elección: ";
     cin >> opcion;
 
-    if (opcion == 1) {
-        // Buscar por nombre de usuario
-        auto it = find_if(usuarios.begin(), usuarios.end(),
-                          [&usuarioActual](const Usuario& u) {
-                              return u.NomUsuario == usuarioActual.NomUsuario;
-                          });
+    switch(opcion) 
+    {
+    case 1:
+        {
+            auto it = find_if(usuarios.begin(), usuarios.end(),[&usuarioActual](const Usuario& u) {return u.NomUsuario == usuarioActual.NomUsuario;});
 
-        if (it != usuarios.end()) {
-            usuarios.erase(it);
-            cout << "CUENTA ELIMINADA EXITOSAMENTE." << endl;
-
-            // Opcional: limpiar datos del usuario actual
-            usuarioActual = Usuario(); 
-        } else {
-            cout << "USUARIO NO ENCONTRADO." << endl;
+            if (it != usuarios.end()) 
+            {
+                usuarios.erase(it);
+                cout << "\nCuenta eliminada correctamente." << endl;
+                usuarioActual = Usuario(); // Resetear usuario
+            } 
+            else 
+            {
+                cout << "\nError: cuenta no encontrada." << endl;
+            }
+            break;
         }
-    } else if (opcion == 2) {
-        cout << "OPERACIÓN CANCELADA." << endl;
-    } else {
-        cout << "OPCIÓN INVÁLIDA." << endl;
+
+    case 2:
+        cout << "\nOperación cancelada. Volviendo al menú..." << endl;
+        return;
+    default:
+        cout << "\nOpción inválida." << endl;
+    }
+
+    // Si llegamos aquí y el usuario fue eliminado, forzar cierre
+    if (usuarioActual.NomUsuario.empty()) 
+    {
+        cout << "\nSesión finalizada por eliminación de cuenta." << endl;
+        this_thread::sleep_for(chrono::seconds(2));
     }
 }
